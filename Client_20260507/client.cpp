@@ -4,64 +4,20 @@ static int ReceiveCnt = 0;
 
 void ReceiveFile(SOCKET InServerSocket, const char* InFileName)
 {
-	FILE* File = fopen(InFileName, "wb");
-	if (File == NULL)
+	FILE* File = fopen(InFileName, "rb");
+
+	char Buffer[RECEIVE_BUFFER_SIZE] = { 0, };
+	size_t RecvBytes = 0;
+	do
 	{
-		printf("파일을 생성할 수 없습니다.\n");
-		return;
-	}
+		RecvBytes = fread(Buffer, sizeof(char), RECEIVE_BUFFER_SIZE, File);
+		int Result = send(InServerSocket, Buffer, (int)RecvBytes, 0);
 
-	int64_t TotalExpectedSize;
-	int Result = recv(InServerSocket, (char*)&TotalExpectedSize, sizeof(TotalExpectedSize), 0);
-
-	if (Result <= 0)
-	{
-		printf("파일 크기 정보를 수신하지 못했습니다.\n");
-		fclose(File);
-		return;
-	}
-
-	char* ReceiveBuffer = (char*)malloc(RECEIVE_BUFFER_SIZE);
-
-	long TotalReceivedBytes = 0;
-	int BytesToRequest;
-	int ActualReadBytes;
-
-	printf("수신 시작: 총 %ld bytes\n", TotalExpectedSize);
-
-	while (TotalReceivedBytes < TotalExpectedSize)
-	{
-		if (TotalExpectedSize - TotalReceivedBytes < RECEIVE_BUFFER_SIZE)
-		{
-			BytesToRequest = (int)(TotalExpectedSize - TotalReceivedBytes);
-		}
-		else
-		{
-			BytesToRequest = RECEIVE_BUFFER_SIZE;
-		}
-
-		ActualReadBytes = recv(InServerSocket, ReceiveBuffer, BytesToRequest, 0);
-		printf("%d		", ReceiveCnt++);
-
-		if (ActualReadBytes <= 0)
+		if (Result <= 0)
 		{
 			break;
 		}
-
-		fwrite(ReceiveBuffer, 1, ActualReadBytes, File);
-		TotalReceivedBytes += ActualReadBytes;
-	}
-
-	if (TotalReceivedBytes == TotalExpectedSize)
-	{
-		printf("파일 수신 완료\n");
-	}
-	else
-	{
-		printf("파일 수신 불완전\n");
-	}
-
-	free(ReceiveBuffer);
+	} while (RecvBytes > 0);
 	fclose(File);
 }
 

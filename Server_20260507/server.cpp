@@ -3,51 +3,20 @@
 void SendFile(SOCKET InClientSocket, const char* InFileName)
 {
 	FILE* File = fopen(InFileName, "rb");
-	if (File == NULL)
+
+	char Buffer[SEND_BUFFER_SIZE] = { 0, };
+	size_t SentBytes = 0;
+	do
 	{
-		printf("파일을 찾을 수 없습니다.\n");
-		return;
-	}
-
-	fseek(File, 0, SEEK_END);
-	int64_t TotalFileSize = ftell(File);
-	fseek(File, 0, SEEK_SET);
-
-	send(InClientSocket, (char*)&TotalFileSize, sizeof(TotalFileSize), 0);
-
-	char* SendBuffer = (char*)malloc(SEND_BUFFER_SIZE);
-
-	long TotalSentBytes = 0;
-	int BytesToRead;
-	int ReadBytes;
-
-	while (TotalSentBytes < TotalFileSize)
-	{
-		if (TotalFileSize - TotalSentBytes < SEND_BUFFER_SIZE)
-		{
-			BytesToRead = (int)(TotalFileSize - TotalSentBytes);
-		}
-		else
-		{
-			BytesToRead = SEND_BUFFER_SIZE;
-		}
-
-		ReadBytes = (int)fread(SendBuffer, 1, BytesToRead, File);
-
-		if (ReadBytes > 0)
-		{
-			send(InClientSocket, SendBuffer, ReadBytes, 0);
-			TotalSentBytes += ReadBytes;
-		}
-		else
+		SentBytes = fread(Buffer, sizeof(char), SEND_BUFFER_SIZE, File);
+		int Result = send(InClientSocket, Buffer, (int)SentBytes, 0);
+		
+		if (Result <= 0)
 		{
 			break;
 		}
-	}
+	} while (SentBytes > 0);
 
-	printf("파일 전송 완료\n");
-
-	free(SendBuffer);
 	fclose(File);
 }
 
