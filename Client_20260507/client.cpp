@@ -1,5 +1,7 @@
 ﻿#include "stdafx.h"
 
+static int ReceiveCnt = 0;
+
 void ReceiveFile(SOCKET InServerSocket, const char* InFileName)
 {
 	FILE* File = fopen(InFileName, "wb");
@@ -39,6 +41,7 @@ void ReceiveFile(SOCKET InServerSocket, const char* InFileName)
 		}
 
 		ActualReadBytes = recv(InServerSocket, ReceiveBuffer, BytesToRequest, 0);
+		printf("%d		", ReceiveCnt++);
 
 		if (ActualReadBytes <= 0)
 		{
@@ -92,35 +95,6 @@ int main()
 		exit(-1);
 	}
 
-	int RecvSize;
-	int SendSize;
-
-	char Buffer[1024] = "Hello";
-	SendSize = send(ServerSocket, Buffer, sizeof(Buffer), 0);
-	if (SendSize == 0)
-	{
-		std::cout << "Client Disconnected" << std::endl;
-		exit(-1);
-	}
-	else if (SendSize < 0)
-	{
-		std::cout << "Send Error " << WSAGetLastError() << std::endl;
-		exit(-1);
-	}
-
-	/*RecvSize = recv(ServerSocket, Buffer, sizeof(Buffer), 0);
-	if (RecvSize == 0)
-	{
-		std::cout << "Client Disconnected" << std::endl;
-		exit(-1);
-	}
-	else if (RecvSize < 0)
-	{
-		std::cout << "Receive Error " << WSAGetLastError() << std::endl;
-		exit(-1);
-	}
-	std::cout << "Received Data : " << Buffer << std::endl;*/\
-	
 	ReceiveFile(ServerSocket, "ReceivedFile.png");
 
 	closesocket(ServerSocket);

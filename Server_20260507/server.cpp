@@ -19,6 +19,7 @@ void SendFile(SOCKET InClientSocket, const char* InFileName)
 
 	long TotalSentBytes = 0;
 	int BytesToRead;
+	int ReadBytes;
 
 	while (TotalSentBytes < TotalFileSize)
 	{
@@ -31,7 +32,7 @@ void SendFile(SOCKET InClientSocket, const char* InFileName)
 			BytesToRead = SEND_BUFFER_SIZE;
 		}
 
-		int ReadBytes = (int)fread(SendBuffer, 1, BytesToRead, File);
+		ReadBytes = (int)fread(SendBuffer, 1, BytesToRead, File);
 
 		if (ReadBytes > 0)
 		{
@@ -93,10 +94,6 @@ int main()
 	memset(&ClientAddr, 0, sizeof(ClientAddr));
 
 	int ClientAddrSize;
-	int RecvSize;
-	int SendSize;
-
-	char Buffer[1024] = { 0, };
 
 	while (true)
 	{
@@ -108,32 +105,6 @@ int main()
 			std::cout << "Accept Error " << WSAGetLastError() << std::endl;
 			exit(-1);
 		}
-
-		memset(Buffer, 0, sizeof(Buffer));
-		RecvSize = recv(ClientSocket, Buffer, sizeof(Buffer), 0);
-		if (RecvSize == 0)
-		{
-			std::cout << "Client Disconnected" << std::endl;
-			exit(-1);
-		}
-		else if (RecvSize < 0)
-		{
-			std::cout << "Receive Error " << WSAGetLastError() << std::endl;
-			exit(-1);
-		}
-		std::cout << "Received Data: " << Buffer << std::endl;
-
-		/*SendSize = send(ClientSocket, Buffer, sizeof(Buffer), 0);
-		if (SendSize == 0)
-		{
-			std::cout << "Client Disconnected" << std::endl;
-			exit(-1);
-		}
-		else if (SendSize < 0)
-		{
-			std::cout << "Send Error " << WSAGetLastError() << std::endl;
-			exit(-1);
-		}*/
 
 		SendFile(ClientSocket, "carnation.png");
 

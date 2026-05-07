@@ -5,4 +5,4 @@
 #include <WinSock2.h>
 
 constexpr int SERVERPORT = 9000;
-constexpr int RECEIVE_BUFFER_SIZE = 1024 * 64;
+constexpr int RECEIVE_BUFFER_SIZE = 1024;
