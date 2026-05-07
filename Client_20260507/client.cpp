@@ -2,6 +2,8 @@
 
 static int ReceiveCnt = 0;
 
+char Operator[4] = { '+', '-', '*', '/' };
+
 void ReceiveFile(SOCKET InServerSocket, const char* InFileName)
 {
 	FILE* File = fopen(InFileName, "rb");
@@ -54,20 +56,66 @@ int main()
 		exit(-1);
 	}
 
-	char SendBuffer[5] = { 0, };
+	while (true)
+	{
+		char SendBuffer[9] = { 0, };
 
-	int LeftNum = rand() % 90 + 10;
-	int RightNum = rand() % 90 + 10;
+		int LeftNum = rand() % 10000;
+		int RightNum = rand() % 9999 + 1;
+		int OperatorIndex = rand() % 4;
 
-	SendBuffer[0] = (LeftNum / 10) + '0';
-	SendBuffer[1] = (LeftNum % 10) + '0';
+		SendBuffer[0] = (LeftNum / 1000) + '0';
+		SendBuffer[1] = ((LeftNum / 100) % 10) + '0';
+		SendBuffer[2] = ((LeftNum / 10) % 10) + '0';
+		SendBuffer[3] = (LeftNum % 10) + '0';
 
-	SendBuffer[2] = '+';
+		SendBuffer[4] = Operator[OperatorIndex];
 
-	SendBuffer[3] = (RightNum / 10) + '0';
-	SendBuffer[4] = (RightNum % 10) + '0';
+		SendBuffer[5] = (RightNum / 1000) + '0';
+		SendBuffer[6] = ((RightNum / 100) % 10) + '0';
+		SendBuffer[7] = ((RightNum / 10) % 10) + '0';
+		SendBuffer[8] = (RightNum % 10) + '0';
 
-	send(ServerSocket, SendBuffer, 5, 0);
+		int SendResult = send(ServerSocket, SendBuffer, 9, 0);
+		if (SendResult <= 0)
+		{
+			printf("Send Error\n");
+			exit(-1);
+		}
+
+		char RecvBuffer[9] = { 0, };
+		int RecvResult = recv(ServerSocket, RecvBuffer, 9, 0);
+		if (RecvResult <= 0)
+		{
+			printf("Recv Error\n");
+			exit(-1);
+		}
+
+		int FinalResult = 0;
+		bool bIsNegative = false;
+		int Index = 0;
+
+		if (RecvBuffer[0] == '-')
+		{
+			bIsNegative = true;
+			Index = 1; 
+		}
+
+		for (int i = Index; i < 9; ++i)
+		{
+			if (RecvBuffer[i] >= '0' && RecvBuffer[i] <= '9')
+			{
+				FinalResult = FinalResult * 10 + (RecvBuffer[i] - '0');
+			}
+		}
+
+		if (bIsNegative)
+		{
+			FinalResult *= -1;
+		}
+
+		printf("%d %c %d = %d\n", LeftNum, Operator[OperatorIndex], RightNum, FinalResult);
+	}
 
 	closesocket(ServerSocket);
 	WSACleanup();
