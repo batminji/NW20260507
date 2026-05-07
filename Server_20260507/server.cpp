@@ -75,7 +75,20 @@ int main()
 			exit(-1);
 		}
 
-		SendFile(ClientSocket, "carnation.png");
+		char RecvBuffer[5] = { 0, };
+		int RecvResult = recv(ClientSocket, RecvBuffer, 5, 0);
+		if (RecvResult <= 0)
+		{
+			printf("Recv Error\n");
+			break;
+		}
+
+		int LeftNum = (RecvBuffer[0] - '0') * 10 + RecvBuffer[1] - '0';
+		int RightNum = (RecvBuffer[3] - '0') * 10 + RecvBuffer[4] - '0';
+
+		int Sum = LeftNum + RightNum;
+
+		printf("Sum Result : %d + %d = %d\n", LeftNum, RightNum, Sum);
 
 		closesocket(ClientSocket);
 	}

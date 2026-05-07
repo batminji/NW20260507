@@ -7,22 +7,25 @@ void ReceiveFile(SOCKET InServerSocket, const char* InFileName)
 	FILE* File = fopen(InFileName, "rb");
 
 	char Buffer[RECEIVE_BUFFER_SIZE] = { 0, };
-	size_t RecvBytes = 0;
+	size_t WriteSize = 0;
 	do
 	{
-		RecvBytes = fread(Buffer, sizeof(char), RECEIVE_BUFFER_SIZE, File);
-		int Result = send(InServerSocket, Buffer, (int)RecvBytes, 0);
-
-		if (Result <= 0)
+		int RecvBytes = recv(InServerSocket, Buffer, sizeof(Buffer), 0);
+		if (RecvBytes <= 0)
 		{
 			break;
 		}
-	} while (RecvBytes > 0);
+
+		WriteSize = fwrite(Buffer, sizeof(char), RecvBytes, File);
+	} while (WriteSize > 0);
+
 	fclose(File);
 }
 
 int main()
 {
+	std::srand(std::time(NULL));
+
 	int Result;
 
 	WSADATA wsaData;
@@ -51,7 +54,20 @@ int main()
 		exit(-1);
 	}
 
-	ReceiveFile(ServerSocket, "ReceivedFile.png");
+	char SendBuffer[5] = { 0, };
+
+	int LeftNum = rand() % 90 + 10;
+	int RightNum = rand() % 90 + 10;
+
+	SendBuffer[0] = (LeftNum / 10) + '0';
+	SendBuffer[1] = (LeftNum % 10) + '0';
+
+	SendBuffer[2] = '+';
+
+	SendBuffer[3] = (RightNum / 10) + '0';
+	SendBuffer[4] = (RightNum % 10) + '0';
+
+	send(ServerSocket, SendBuffer, 5, 0);
 
 	closesocket(ServerSocket);
 	WSACleanup();
