@@ -1,58 +1,64 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 void ReceiveFile(SOCKET InServerSocket, const char* InFileName)
 {
+	// 1. 파일 생성 (바이너리 쓰기 모드)
 	FILE* File = fopen(InFileName, "wb");
-	if (File == NULL) 
+	if (File == NULL)
 	{
-		printf("������ ������ �� �����ϴ�.\n");
+		printf("파일을 생성할 수 없습니다.\n");
 		return;
 	}
 
-	long TotalSize;
-	int Result = recv(InServerSocket, (char*)&TotalSize, sizeof(TotalSize), 0);
+	// 2. 전체 파일 크기 수신 (Header)
+	long TotalExpectedSize;
+	int Result = recv(InServerSocket, (char*)&TotalExpectedSize, sizeof(TotalExpectedSize), 0);
 
-	if (Result <= 0) 
+	if (Result <= 0)
 	{
-		printf("File Total Size Receive Error\n");
+		printf("파일 크기 정보를 수신하지 못했습니다.\n");
 		fclose(File);
 		return;
 	}
 
+	// 3. 수신용 대형 버퍼 할당
 	char* ReceiveBuffer = (char*)malloc(RECEIVE_BUFFER_SIZE);
 
 	long TotalReceivedBytes = 0;
-	int ReadBytes;
 	int BytesToRequest;
+	int ActualReadBytes;
 
-	printf("���� ����\n");
+	printf("수신 시작: 총 %ld bytes\n", TotalExpectedSize);
 
-	while (TotalReceivedBytes < TotalSize) 
+	while (TotalReceivedBytes < TotalExpectedSize)
 	{
-		if (TotalSize - TotalReceivedBytes < RECEIVE_BUFFER_SIZE)
+		if (TotalExpectedSize - TotalReceivedBytes < RECEIVE_BUFFER_SIZE)
 		{
-			BytesToRequest = (int)(TotalSize - TotalReceivedBytes);
+			BytesToRequest = (int)(TotalExpectedSize - TotalReceivedBytes);
 		}
 		else
 		{
 			BytesToRequest = RECEIVE_BUFFER_SIZE;
 		}
 
-		ReadBytes = recv(InServerSocket, ReceiveBuffer, BytesToRequest, 0);
+		ActualReadBytes = recv(InServerSocket, ReceiveBuffer, BytesToRequest, 0);
 
-		if (ReadBytes <= 0) 
+		if (ActualReadBytes <= 0)
 		{
-			printf("Receive Error\n");
 			break;
 		}
 
-		fwrite(ReceiveBuffer, 1, ReadBytes, File);
-		TotalReceivedBytes += ReadBytes;
+		fwrite(ReceiveBuffer, 1, ActualReadBytes, File);
+		TotalReceivedBytes += ActualReadBytes;
 	}
 
-	if (TotalReceivedBytes == TotalSize) 
+	if (TotalReceivedBytes == TotalExpectedSize)
 	{
-		std::cout << "���� ���� �Ϸ�: " << InFileName << std::endl;
+		printf("파일 수신 완료\n");
+	}
+	else
+	{
+		printf("파일 수신 불완전\n");
 	}
 
 	free(ReceiveBuffer);

@@ -1,11 +1,11 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 
 void SendFile(SOCKET InClientSocket, const char* InFileName)
 {
 	FILE* File = fopen(InFileName, "rb");
-	if (File == NULL) 
+	if (File == NULL)
 	{
-		printf("ÆÄÀÏÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù.\n");
+		printf("íŒŒì¼ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.\n");
 		return;
 	}
 
@@ -17,29 +17,34 @@ void SendFile(SOCKET InClientSocket, const char* InFileName)
 
 	char* SendBuffer = (char*)malloc(SEND_BUFFER_SIZE);
 
-	int CurrentStoredBytes = 0;
-	char ReadBuffer[4096];
-	int ReadBytes;
+	long TotalSentBytes = 0;
+	int BytesToRead;
 
-	while ((ReadBytes = fread(ReadBuffer, 1, sizeof(ReadBuffer), File)) > 0) 
+	while (TotalSentBytes < TotalFileSize)
 	{
-
-		if (CurrentStoredBytes + ReadBytes > SEND_BUFFER_SIZE) 
+		if (TotalFileSize - TotalSentBytes < SEND_BUFFER_SIZE)
 		{
-			send(InClientSocket, SendBuffer, CurrentStoredBytes, 0);
-			CurrentStoredBytes = 0;
+			BytesToRead = (int)(TotalFileSize - TotalSentBytes);
+		}
+		else
+		{
+			BytesToRead = SEND_BUFFER_SIZE;
 		}
 
-		memcpy(SendBuffer + CurrentStoredBytes, ReadBuffer, ReadBytes);
-		CurrentStoredBytes += ReadBytes;
+		int ActualReadBytes = (int)fread(SendBuffer, 1, BytesToRead, File);
+
+		if (ActualReadBytes > 0)
+		{
+			send(InClientSocket, SendBuffer, ActualReadBytes, 0);
+			TotalSentBytes += ActualReadBytes;
+		}
+		else
+		{
+			break;
+		}
 	}
 
-	if (CurrentStoredBytes > 0) 
-	{
-		send(InClientSocket, SendBuffer, CurrentStoredBytes, 0);
-	}
-
-	std::cout << "ÆÄÀÏ Àü¼Û ¿Ï·á: " << TotalFileSize << " bytes" << std::endl;
+	printf("íŒŒì¼ ì „ì†¡ ì™„ë£Œ\n");
 
 	free(SendBuffer);
 	fclose(File);
