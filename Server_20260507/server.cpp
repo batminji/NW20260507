@@ -31,12 +31,12 @@ void SendFile(SOCKET InClientSocket, const char* InFileName)
 			BytesToRead = SEND_BUFFER_SIZE;
 		}
 
-		int ActualReadBytes = (int)fread(SendBuffer, 1, BytesToRead, File);
+		int ReadBytes = (int)fread(SendBuffer, 1, BytesToRead, File);
 
-		if (ActualReadBytes > 0)
+		if (ReadBytes > 0)
 		{
-			send(InClientSocket, SendBuffer, ActualReadBytes, 0);
-			TotalSentBytes += ActualReadBytes;
+			send(InClientSocket, SendBuffer, ReadBytes, 0);
+			TotalSentBytes += ReadBytes;
 		}
 		else
 		{
