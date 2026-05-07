@@ -2,7 +2,6 @@
 
 void ReceiveFile(SOCKET InServerSocket, const char* InFileName)
 {
-	// 1. 파일 생성 (바이너리 쓰기 모드)
 	FILE* File = fopen(InFileName, "wb");
 	if (File == NULL)
 	{
@@ -10,8 +9,7 @@ void ReceiveFile(SOCKET InServerSocket, const char* InFileName)
 		return;
 	}
 
-	// 2. 전체 파일 크기 수신 (Header)
-	long TotalExpectedSize;
+	int64_t TotalExpectedSize;
 	int Result = recv(InServerSocket, (char*)&TotalExpectedSize, sizeof(TotalExpectedSize), 0);
 
 	if (Result <= 0)
@@ -21,7 +19,6 @@ void ReceiveFile(SOCKET InServerSocket, const char* InFileName)
 		return;
 	}
 
-	// 3. 수신용 대형 버퍼 할당
 	char* ReceiveBuffer = (char*)malloc(RECEIVE_BUFFER_SIZE);
 
 	long TotalReceivedBytes = 0;

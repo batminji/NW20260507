@@ -10,7 +10,7 @@ void SendFile(SOCKET InClientSocket, const char* InFileName)
 	}
 
 	fseek(File, 0, SEEK_END);
-	long TotalFileSize = ftell(File);
+	int64_t TotalFileSize = ftell(File);
 	fseek(File, 0, SEEK_SET);
 
 	send(InClientSocket, (char*)&TotalFileSize, sizeof(TotalFileSize), 0);
