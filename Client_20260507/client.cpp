@@ -1,5 +1,64 @@
 #include "stdafx.h"
 
+void ReceiveFile(SOCKET InServerSocket, const char* InFileName)
+{
+	FILE* File = fopen(InFileName, "wb");
+	if (File == NULL) 
+	{
+		printf("파일을 생성할 수 없습니다.\n");
+		return;
+	}
+
+	long TotalSize;
+	int Result = recv(InServerSocket, (char*)&TotalSize, sizeof(TotalSize), 0);
+
+	if (Result <= 0) 
+	{
+		printf("File Total Size Receive Error\n");
+		fclose(File);
+		return;
+	}
+
+	char* ReceiveBuffer = (char*)malloc(RECEIVE_BUFFER_SIZE);
+
+	long TotalReceivedBytes = 0;
+	int ReadBytes;
+	int BytesToRequest;
+
+	printf("수신 시작\n");
+
+	while (TotalReceivedBytes < TotalSize) 
+	{
+		if (TotalSize - TotalReceivedBytes < RECEIVE_BUFFER_SIZE)
+		{
+			BytesToRequest = (int)(TotalSize - TotalReceivedBytes);
+		}
+		else
+		{
+			BytesToRequest = RECEIVE_BUFFER_SIZE;
+		}
+
+		ReadBytes = recv(InServerSocket, ReceiveBuffer, BytesToRequest, 0);
+
+		if (ReadBytes <= 0) 
+		{
+			printf("Receive Error\n");
+			break;
+		}
+
+		fwrite(ReceiveBuffer, 1, ReadBytes, File);
+		TotalReceivedBytes += ReadBytes;
+	}
+
+	if (TotalReceivedBytes == TotalSize) 
+	{
+		std::cout << "파일 수신 완료: " << InFileName << std::endl;
+	}
+
+	free(ReceiveBuffer);
+	fclose(File);
+}
+
 int main()
 {
 	int Result;
@@ -20,7 +79,7 @@ int main()
 	SOCKADDR_IN ServerSockAddr;
 	memset(&ServerSockAddr, 0, sizeof(ServerSockAddr));
 	ServerSockAddr.sin_family = AF_INET;
-	ServerSockAddr.sin_addr.s_addr = inet_addr("192.168.0.95");
+	ServerSockAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	ServerSockAddr.sin_port = htons(SERVERPORT);
 
 	Result = connect(ServerSocket, (SOCKADDR*)&ServerSockAddr, sizeof(ServerSockAddr));
@@ -33,7 +92,7 @@ int main()
 	int RecvSize;
 	int SendSize;
 
-	char Buffer[1024] = "";
+	char Buffer[1024] = "Hello";
 	SendSize = send(ServerSocket, Buffer, sizeof(Buffer), 0);
 	if (SendSize == 0)
 	{
@@ -46,7 +105,7 @@ int main()
 		exit(-1);
 	}
 
-	RecvSize = recv(ServerSocket, Buffer, sizeof(Buffer), 0);
+	/*RecvSize = recv(ServerSocket, Buffer, sizeof(Buffer), 0);
 	if (RecvSize == 0)
 	{
 		std::cout << "Client Disconnected" << std::endl;
@@ -57,7 +116,9 @@ int main()
 		std::cout << "Receive Error " << WSAGetLastError() << std::endl;
 		exit(-1);
 	}
-	std::cout << "Received Data : " << Buffer << std::endl;
+	std::cout << "Received Data : " << Buffer << std::endl;*/\
+	
+	ReceiveFile(ServerSocket, "ReceivedFile.png");
 
 	closesocket(ServerSocket);
 	WSACleanup();

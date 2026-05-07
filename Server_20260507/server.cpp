@@ -1,5 +1,50 @@
 #include "stdafx.h"
 
+void SendFile(SOCKET InClientSocket, const char* InFileName)
+{
+	FILE* File = fopen(InFileName, "rb");
+	if (File == NULL) 
+	{
+		printf("파일을 찾을 수 없습니다.\n");
+		return;
+	}
+
+	fseek(File, 0, SEEK_END);
+	long TotalFileSize = ftell(File);
+	fseek(File, 0, SEEK_SET);
+
+	send(InClientSocket, (char*)&TotalFileSize, sizeof(TotalFileSize), 0);
+
+	char* SendBuffer = (char*)malloc(SEND_BUFFER_SIZE);
+
+	int CurrentStoredBytes = 0;
+	char ReadBuffer[4096];
+	int ReadBytes;
+
+	while ((ReadBytes = fread(ReadBuffer, 1, sizeof(ReadBuffer), File)) > 0) 
+	{
+
+		if (CurrentStoredBytes + ReadBytes > SEND_BUFFER_SIZE) 
+		{
+			send(InClientSocket, SendBuffer, CurrentStoredBytes, 0);
+			CurrentStoredBytes = 0;
+		}
+
+		memcpy(SendBuffer + CurrentStoredBytes, ReadBuffer, ReadBytes);
+		CurrentStoredBytes += ReadBytes;
+	}
+
+	if (CurrentStoredBytes > 0) 
+	{
+		send(InClientSocket, SendBuffer, CurrentStoredBytes, 0);
+	}
+
+	std::cout << "파일 전송 완료: " << TotalFileSize << " bytes" << std::endl;
+
+	free(SendBuffer);
+	fclose(File);
+}
+
 int main()
 {
 	int Result;
@@ -41,9 +86,12 @@ int main()
 	SOCKET ClientSocket;
 	SOCKADDR_IN ClientAddr;
 	memset(&ClientAddr, 0, sizeof(ClientAddr));
+
 	int ClientAddrSize;
 	int RecvSize;
 	int SendSize;
+
+	char Buffer[1024] = { 0, };
 
 	while (true)
 	{
@@ -56,7 +104,7 @@ int main()
 			exit(-1);
 		}
 
-		char Buffer[1024] = { 0, };
+		memset(Buffer, 0, sizeof(Buffer));
 		RecvSize = recv(ClientSocket, Buffer, sizeof(Buffer), 0);
 		if (RecvSize == 0)
 		{
@@ -68,10 +116,9 @@ int main()
 			std::cout << "Receive Error " << WSAGetLastError() << std::endl;
 			exit(-1);
 		}
-
 		std::cout << "Received Data: " << Buffer << std::endl;
 
-		SendSize = send(ClientSocket, Buffer, sizeof(Buffer), 0);
+		/*SendSize = send(ClientSocket, Buffer, sizeof(Buffer), 0);
 		if (SendSize == 0)
 		{
 			std::cout << "Client Disconnected" << std::endl;
@@ -81,7 +128,11 @@ int main()
 		{
 			std::cout << "Send Error " << WSAGetLastError() << std::endl;
 			exit(-1);
-		}
+		}*/
+
+		SendFile(ClientSocket, "carnation.png");
+
+		closesocket(ClientSocket);
 	}
 
 	closesocket(ServerSocket);
